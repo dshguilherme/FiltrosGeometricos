@@ -10,9 +10,8 @@ import numpy as np
 from scipy.io import loadmat
 
 import theano
-from neupy import layers, algorithms, environment
-from sklearn import model_selection, metrics, datasets
-
+from neupy import layers, algorithms, environment, plots
+from sklearn import model_selection
 environment.reproducible()
 environment.speedup()
 
@@ -50,15 +49,15 @@ x_test = x_test.reshape(x_test.shape[0], x_test.shape[2])
 y_test = y_test.reshape(y_test.shape[0], y_test.shape[2])
 
 # Creating the network
-network = algorithms.RPROP(
+network = algorithms.IRPROPPlus(
         [
                 layers.Input(500),
                 layers.Relu(252),
                 layers.Relu(128), 
                 layers.Softplus(4),
         ],
-        increase_factor = 1.1,
-        decrease_factor = 0.9,
+        increase_factor = 1.01,
+        decrease_factor = 0.99,
         # Using Mean Squared Error as the Loss Function
         error='binary_hinge',
         # A batch size of 32 will give us possibly 175 epochs for training
@@ -73,4 +72,5 @@ network = algorithms.RPROP(
 )
 # Show network architecture in console
 network.architecture()
-
+network.train(x_train, y_train, x_test, y_test, epochs=1000)
+plots.error_plot(network)
