@@ -8,6 +8,7 @@ coauthor: Paulo Vitor Ribeiro Martins
 
 import numpy as np
 from scipy.io import loadmat
+import pandas as pd
 
 import theano
 from neupy import layers, algorithms, environment, plots
@@ -72,3 +73,45 @@ network = algorithms.MinibatchGradientDescent(
 network.architecture()
 network.train(x_train, y_train, x_test, y_test, epochs=70)
 plots.error_plot(network)
+
+# Making test filters
+MIN_POWER = np.min(x_train)
+MAX_POWER = np.max(x_train)
+
+FrequencyTestArray = np.empty([500,500], dtype='float32')
+FrequencyTestArray[:,:] = MAX_POWER
+np.fill_diagonal(FrequencyTestArray[0:500,:], MIN_POWER)
+
+DoubleTestArray = np.empty([250,500], dtype='float32')
+DoubleTestArray[:,:] = MAX_POWER
+for i in range (0,250):
+    DoubleTestArray[i,i] = MIN_POWER
+    DoubleTestArray[i,-(i+1)] = MIN_POWER
+
+PredictArray = network.predict(FrequencyTestArray)
+PredictArray2 = network.predict(DoubleTestArray,)
+
+# Deregularization
+PredictArray *= std
+PredictArray += mean
+PredictArray2 *= std
+PredictArray2 += mean
+for i in range (0, len(scalers)):
+    PredictArray[:,i] *= scalers[i]
+    PredictArray2[:,i] *= scalers[i]
+
+d = {'R' : PredictArray[:,0],
+     'L' : PredictArray[:,1],
+     'Tx': PredictArray[:,2],
+     'Ty': PredictArray[:,3]}
+
+Predictions = pd.DataFrame(d)
+
+d = {'R' : PredictArray2[:,0],
+     'L' : PredictArray2[:,1],
+     'Tx': PredictArray2[:,2],
+     'Ty': PredictArray2[:,3]}
+
+Predictions2 = pd.DataFrame(d)
+Predictions = Predictions.append(Predictions2)
+Predictions.to_csv('Predictions.csv')
